@@ -3,3 +3,5 @@ notebooks/.ipynb_checkpoints
 *.csv
 *.brian-SeattleDS
 logs/
+*.json
+*.7z
