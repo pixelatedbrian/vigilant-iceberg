@@ -2,4 +2,4 @@
 notebooks/.ipynb_checkpoints
 *.csv
 *.brian-SeattleDS
-logs/*
+logs/
