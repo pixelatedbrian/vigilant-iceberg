@@ -1,0 +1,3 @@
+*.hdf5
+notebooks/.ipynb_checkpoints
+*.csv
