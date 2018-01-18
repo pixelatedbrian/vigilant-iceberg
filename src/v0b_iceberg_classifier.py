@@ -1,15 +1,8 @@
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np  # linear algebra
+import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 
 from sklearn.model_selection import train_test_split
-from os.path import join as opj
-from matplotlib import pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from mpl_toolkits.mplot3d import Axes3D
-import pylab
-# plt.rcParams['figure.figsize'] = 10, 10
-
-import os
+from iceberg_helpers import plot_hist, score_model, data_pipeline
 
 #Import Keras.
 # from keras.preprocessing.image import ImageDataGenerator
@@ -23,6 +16,7 @@ from keras import initializers
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, Callback, EarlyStopping, TensorBoard
 from keras import backend as K
+
 
 #define our model
 def getModel(learning_rate=0.001, lr_decay=1e-6, drop_out=0.2):
@@ -103,31 +97,6 @@ def get_callbacks(filepath, patience=2):
     # return [es, msave]
     return [msave, tboard]
 
-
-def standardize(feature):
-    '''
-    subtract the mean of feature from feature then divide by variance
-    '''
-    temp = feature.copy()
-    return (feature - temp.mean()) / (temp.std()**2 * 1.0)
-
-def data_pipeline(raw_data):
-    #Generate the training data
-    #Create 3 bands having HH, HV and avg of both
-    X_band_1=np.array([np.array(band).astype(np.float32).reshape(75, 75) for band in raw_data["band_1"]])
-    X_band_2=np.array([np.array(band).astype(np.float32).reshape(75, 75) for band in raw_data["band_2"]])
-
-    # make a channel that is the average of the two channels
-    X_avg_band = (X_band_1+X_band_2)/2.0
-
-    # Done: need to normalize data at some point
-    X_band_1 = standardize(X_band_1)
-    X_band_2 = standardize(X_band_2)
-    X_avg_band = standardize(X_avg_band)
-
-    data = np.concatenate([X_band_1[..., np.newaxis], X_band_2[..., np.newaxis], X_avg_band[..., np.newaxis]], axis=-1)
-
-    return data
 
 def augment_data(X_train, y_train):
     #############################################
@@ -229,20 +198,7 @@ def plot_hist(hist, epochs, learning_rate, batch_size, drop_out, lr_decay):
     axs[1].xaxis.set_minor_locator(minorLocator)
 
     plt.savefig("../imgs/" + info_str, facecolor='w', edgecolor='w', transparent=False)
-    plt.show()
-
-def score_model(gmodel, file_path, X_train, y_train, X_dev, y_dev):
-    gmodel.load_weights(filepath=file_path)
-
-    # train set scoring
-    score = gmodel.evaluate(X_train, y_train)
-    print("\n\nTrain Loss: {:1.4f}".format(score[0]))
-    print("Train Accuracy: {:2.3f}\n".format(score[1] * 100.0))
-
-    # dev set scoring
-    score = gmodel.evaluate(X_dev, y_dev)
-    print("\n\nDev Loss: {:1.4f}".format(score[0]))
-    print("Dev Accuracy: {:2.3f}\n".format(score[1] * 100.0))
+    # plt.show()
 
 def main():
 
@@ -257,7 +213,7 @@ def main():
 
     print("Feed raw data into data pipeline...")
     all_X_train = data_pipeline(train)
-    all_Y_train = train.loc[:,'is_iceberg']
+    all_Y_train = train.loc[:, 'is_iceberg']
     print("Data pipeline operations should be complete")
 
     print("carve data into train/dev/test sets")
