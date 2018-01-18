@@ -35,6 +35,8 @@ class Titanic(object):
 
         self.train_data_dict = None
 
+        self.inc_mean = 0
+
         # model hyperparameters
         self.learning_rate = lr
         self.lr_decay = lr_decay
@@ -58,21 +60,23 @@ class Titanic(object):
         print("Data Pipeline: Begin")
         # load the training data
         print("Data Pipeline: > Load data...")
-        train_data = pd.read_json("../data/train.json")
+        train_data = pd.read_json(self.train_path)
         print("Data Pipeline: >> Data loading complete")
 
         # standardize the data
         print("Data Pipeline: >>> Standardizing image training data...")
+        # TODO: make special_c3 a class veriable so we don't have to care about
+        # it when predicting training data too
         all_X_pics = self.data_pipeline(train_data, special_c3=False)
 
         # figure out extra X features from training data
         print("Data Pipeline: >>>> Load inc_angle training data...")
         inc_angle = pd.to_numeric(train_data.loc[:, "inc_angle"], errors="coerce")
 
-        inc_mean = inc_angle.mean()
+        self.inc_mean = inc_angle.mean()
 
         print("Data Pipeline: >>>>> Standardizing inc_angle training data...")
-        inc_angle[np.isnan(inc_angle)] = inc_mean
+        inc_angle[np.isnan(inc_angle)] = self.inc_mean
         # inc_angle = np.array(inc_angle, dtype=np.float32)
 
         # TODO: enable this?
@@ -123,6 +127,48 @@ class Titanic(object):
 
         print("score model")
         score_test = self.new_score_model()
+
+        print("score of test set:", score_test)
+
+        # load and score the test set
+        self.predict_test_set()
+
+
+    def predict_test_set(self):
+        '''
+        does the pipeline stuff for the test set and then runs predict on
+        that data
+        '''
+        test_data = pd.read_json(self.test_path)
+
+        print("Data Pipeline: >>> Standardizing image test data...")
+        test_X_pics = self.data_pipeline(test_data, special_c3=False)
+
+        # figure out extra X features from training data
+        print("Data Pipeline: >>>> Load inc_angle training data...")
+        test_inc_angle = pd.to_numeric(test_data.loc[:, "inc_angle"], errors="coerce")
+
+        print("Data Pipeline: >>>>> Standardizing inc_angle from training data mean...")
+        test_inc_angle[np.isnan(test_inc_angle)] = self.inc_mean
+        # inc_angle = np.array(inc_angle, dtype=np.float32)
+
+        # TODO: enable this?
+        test_inc_angle = self.standardize(test_inc_angle, "inc_angle")
+
+        print("Data Pipeline: >>>>>> Data standardizing complete")
+
+        # load just completed weights
+        self.model.load_weights(filepath=self.file_path)
+
+        pred_test = self.model.predict([test_X_pics, test_inc_angle])
+
+        # print("prediction data:", data[:10])
+
+        submission = pd.DataFrame({'id': test_data["id"], 'is_iceberg': pred_test.reshape((pred_test.shape[0]))})
+        
+        print(submission.head(10))
+
+        submission.to_csv('cnn.csv', index=False)
 
 
     def score_model(self, gmodel, file_path, X_train, y_train, X_dev, y_dev):
@@ -268,9 +314,9 @@ class Titanic(object):
     def get_callbacks(self):
         # es = EarlyStopping('val_loss', patience=patience, mode="min")
 
-        earlyStopping = EarlyStopping(monitor='val_loss', patience=20, verbose=1, mode='min')
+        earlyStopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1, mode='min')
         mcp_save = ModelCheckpoint(self.file_path, save_best_only=True, monitor='val_loss', mode='min')
-        reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=1, epsilon=1e-4, mode='min')
+        reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, verbose=1, epsilon=1e-4, mode='min')
         # tboard = TensorBoard(log_dir='../logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
         # return [es, msave]
         # return [msave, tboard]
@@ -424,10 +470,10 @@ class Titanic(object):
         # load data needed from that. Otherwise add key/value pair to dict
         if _key in self.standardization_params.keys():
 
-            temp_mean = self.standardization_params(_key)[0]
-            temp_std = self.standardization_params(_key)[1]
+            temp_mean = self.standardization_params[_key][0]
+            temp_std = self.standardization_params[_key][1]
 
-            return (feature_data - mean / (temp_std * 1.0))
+            return (feature_data - temp_mean / (temp_std * 1.0))
         else:
             # make a shallow copy so that we don't mess up values when we work
             # on the arrays
