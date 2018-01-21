@@ -5,25 +5,43 @@ import pandas as pd
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from model_zoo_v2 import model1, model2, model3, model4, tiny_model, model5
+from scipy import signal  # for "get_worms" feature transformation
+
+from sklearn.model_selection import train_test_split
+
+import time
+
 import matplotlib
 matplotlib.use('Agg')  # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from model_zoo import model1, model2, model3, model4, tiny_model, model5
-from scipy import signal # for "get_worms" feature transformation
+
+pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 
 class Titanic(object):
+    '''
+    Version 2
+
+    Skip three level split since we're being greedy for data.
+
+    Drop inc_angle with nan values
+
+    Make data channels only 2 'colors' instead of 3 with a nonsensical 3rd channel
+
+    Don't include inc_angle in model data
+    '''
 
     def __init__(self, model_name="model2",
-                       lr=0.001,
-                       lr_decay=1e-6,
-                       drop_out=0.45,
-                       batch_size=32,
-                       epochs=100,
-                       augment_rotate=False,
-                       augment_ud=True,
-                       c3_transform=0):
+                 lr=0.001,
+                 lr_decay=1e-6,
+                 drop_out=0.45,
+                 batch_size=32,
+                 epochs=100,
+                 augment_rotate=False,
+                 augment_ud=True,
+                 c3_transform=0):
 
         # paths to the data
         self.train_path = "../data/train.json"
@@ -38,7 +56,7 @@ class Titanic(object):
         # for example images x 4 then data_amp = 4 so y_train * 4
         self.data_amp = 0
 
-        self.train_data_dict = None
+        self.data_dict = None
 
         self.inc_mean = 0
 
@@ -52,16 +70,16 @@ class Titanic(object):
         self.augment_ud = augment_ud
         self.c3_transform = c3_transform
 
-        self.img_shape = (75, 75, 3)
+        self.img_shape = (75, 75, 2)
 
         self.model = None
         self.model_name = model_name
-        self.model_dict = {"model1":model1,
-                           "model2":model2,
-                           "model3":model3,
-                           "model4":model4,
-                           "tiny_model":tiny_model,
-                           "model5":model5}
+        self.model_dict = {"model1": model1,
+                           "model2": model2,
+                           "model3": model3,
+                           "model4": model4,
+                           "tiny_model": tiny_model,
+                           "model5": model5}
 
         self.callbacks = None
 
@@ -69,8 +87,6 @@ class Titanic(object):
 
         # loss of the model on dev set
         self.dev_score = 0
-
-
 
     def run_me(self):
         '''
@@ -92,61 +108,63 @@ class Titanic(object):
         # it when predicting training data too
         all_X_pics = self.data_pipeline(train_data)
 
-        # figure out extra X features from training data
-        print("Data Pipeline: >>>> Load inc_angle training data...")
-        inc_angle = pd.to_numeric(train_data.loc[:, "inc_angle"], errors="coerce")
-
-        self.inc_mean = inc_angle.mean()
-
-        print("Data Pipeline: >>>>> Standardizing inc_angle training data...")
-        inc_angle[np.isnan(inc_angle)] = self.inc_mean
-        # inc_angle = np.array(inc_angle, dtype=np.float32)
-
-        # TODO: enable this?
-        # inc_angle = self.standardize(inc_angle, "inc_angle")
-        inc_angle = self.scaler(inc_angle, "inc_angle")
-
-        print("Data Pipeline: >>>>>> Data standardizing complete")
-
-        print("Data Pipeline: >>>>>>> Load y labels...")
+        print("Data Pipeline: >>>> Load y labels...")
         all_Y_labels = train_data.loc[:, "is_iceberg"]
-        print("Data Pipeline: >>>>>>>> Load y labels complete")
+        print("Data Pipeline: >>>>> Load y labels complete")
 
-        # split into train/dev/test
-        print("Data Pipeline: >>>>>>>>> Split into train/dev/test sets...")
-        self.train_dev_test_split((all_X_pics, inc_angle, all_Y_labels))
+        # figure out extra X features from training data
+        print("Data Pipeline: >>>>>> Load inc_angle training data...")
+        train_data.loc[:, "inc_angle"] = train_data.loc[:, "inc_angle"].replace('na', 0)
 
-        print("Data Pipeline: >>>>>>>>>> Data carving complete.")
+        # find non-nan indicies
+        nan_idx = np.where(train_data.loc[:, "inc_angle"] > 0)
 
-        print("Data Pipeline: > Augment data")
-        # X_train_pics, X_train_nonpics, y_train = augment_data(X_train_pics, X_train_nonpics, y_train)
-        self.train_data_dict["X_images_train"], self.data_amp = self.data_augmentation(self.train_data_dict["X_images_train"])
-        self.train_data_dict["inc_angle_train"] = self.amplify_data(self.train_data_dict["inc_angle_train"])
-        self.train_data_dict["y_train"] = self.amplify_data(self.train_data_dict["y_train"])
+        print("Data Pipeline: >>>>>>> Drop nan inc_angle rows")
+
+        all_Y_labels = all_Y_labels[nan_idx[0]]
+        all_X_pics = all_X_pics[nan_idx[0], ...]
+
+        print("all_Y_labels shape", all_Y_labels.shape)
+        print("all_X_labels.shape", all_X_pics.shape)
+
+        time.sleep(5)
+
+        print("Data Pipeline: >>>>>>>> Data standardizing complete")
+
+        # split into train/test
+        print("Data Pipeline: >>>>>>>>> Split into train/test sets...")
+        # self.train_test_split(all_X_pics, all_Y_labels)
+        self.data_dict = {}
+        self.data_dict["X_train"], self.data_dict["X_test"], self.data_dict["y_train"], self.data_dict["y_test"] = train_test_split(all_X_pics, all_Y_labels)
+
+        print("Data Pipeline: >>>>>>>>> Augment data")
+        self.data_dict["X_train"], self.data_amp = self.data_augmentation(self.data_dict["X_train"])
+        self.data_dict["y_train"] = self.amplify_data(self.data_dict["y_train"])
+
+        print("Data Pipeline: > Augmentation complete")
 
         print("Data Pipeline: >> Shuffle augmented data")
-        self.shuffle_training_data()
+        self.data_dict["X_train"], self.data_dict["y_train"] = self.shuffle_training_data(self.data_dict["X_train"], self.data_dict["y_train"])
 
-        print("Data Pipeline: >>> Augmentation complete")
+        print("Data Pipeline: >>> Data carving complete.")
         print("Data Pipeline: >>>> Complete")
 
         print("Model: > Instantiate Model")
-
-        # TODO: take in model string and select which model to use
         self.model = self.model_dict[self.model_name](self.learning_rate,
-        # self.model = model4(self.learning_rate,
-                            self.lr_decay,
-                            self.drop_out,
-                            self.img_shape)
+                                                      self.lr_decay,
+                                                      self.drop_out,
+                                                      self.img_shape)
 
+        print("Model: >> Establish Callbacks")
         self.callbacks = self.get_callbacks()
 
-        hist = self.model.fit([self.train_data_dict["X_images_train"], self.train_data_dict["inc_angle_train"]], self.train_data_dict["y_train"],
-                          batch_size=self.batch_size,
-                          epochs=self.epochs,
-                          verbose=1,
-                          validation_data=([self.train_data_dict["X_images_dev"], self.train_data_dict["inc_angle_dev"]], self.train_data_dict["y_dev"]),
-                          callbacks=self.callbacks)
+        print("Model: >>> Fit Model")
+        hist = self.model.fit(self.data_dict["X_train"], self.data_dict["y_train"],
+                              batch_size=self.batch_size,
+                              epochs=self.epochs,
+                              verbose=1,
+                              validation_data=(self.data_dict["X_test"], self.data_dict["y_test"]),
+                              callbacks=self.callbacks)
 
         print("\n\n\nModel fit completed")
 
@@ -166,7 +184,6 @@ class Titanic(object):
             # load and score the test set
             self.predict_test_set(score_text)
 
-
     def predict_test_set(self, score_text):
         '''
         does the pipeline stuff for the test set and then runs predict on
@@ -178,23 +195,22 @@ class Titanic(object):
         test_X_pics = self.data_pipeline(test_data)
 
         # figure out extra X features from training data
-        print("Data Pipeline: >>>> Load inc_angle training data...")
-        test_inc_angle = pd.to_numeric(test_data.loc[:, "inc_angle"], errors="coerce")
+        print("Data Pipeline: >>>>> Load inc_angle training data...")
+        test_data.loc[:, "inc_angle"] = test_data.loc[:, "inc_angle"].replace('na', 0)
 
-        print("Data Pipeline: >>>>> Standardizing inc_angle from training data mean...")
-        test_inc_angle[np.isnan(test_inc_angle)] = self.inc_mean
-        # inc_angle = np.array(inc_angle, dtype=np.float32)
+        # find non-nan indicies
+        nan_idx = np.where(test_data.loc[:, "inc_angle"] > 0)
 
-        # TODO: enable this?
-        # test_inc_angle = self.standardize(test_inc_angle, "inc_angle")
-        test_inc_angle = self.scaler(test_inc_angle, "inc_angle")
+        print("Data Pipeline: >>>>>> Drop nan inc_angle rows")
+
+        test_X_pics = test_X_pics[nan_idx[0], ...]
 
         print("Data Pipeline: >>>>>> Data standardizing complete")
 
         # load just completed weights
         self.model.load_weights(filepath=self.file_path)
 
-        pred_test = self.model.predict([test_X_pics, test_inc_angle])
+        pred_test = self.model.predict(test_X_pics)
 
         # print("prediction data:", data[:10])
 
@@ -204,7 +220,6 @@ class Titanic(object):
 
         # add score to csv
         submission.to_csv(score_text + 'cnn.csv', index=False)
-
 
     def score_model(self, gmodel, file_path, X_train, y_train, X_dev, y_dev):
         '''
@@ -234,7 +249,6 @@ class Titanic(object):
         print("\n\nDev Loss: {:1.4f}".format(score[0]))
         print("Dev Accuracy: {:2.3f}\n".format(score[1] * 100.0))
 
-
     def new_score_model(self, score_test=False):
         '''
         Takes in a keras model and scores it with the provided data and labels
@@ -255,36 +269,24 @@ class Titanic(object):
 
         _set = "_train"
         # train set scoring
-        score = self.model.evaluate([self.train_data_dict["X_images" + _set], self.train_data_dict["inc_angle" + _set]],
-                                     self.train_data_dict["y" + _set])
+        score = self.model.evaluate(self.data_dict["X" + _set],
+                                    self.data_dict["y" + _set])
 
         print("\n\nTrain Loss: {:1.4f}".format(score[0]))
         print("Train Accuracy: {:2.3f}\n".format(score[1] * 100.0))
 
         # dev set scoring
-        _set = "_dev"
-        score = self.model.evaluate([self.train_data_dict["X_images" + _set], self.train_data_dict["inc_angle" + _set]],
-                                     self.train_data_dict["y" + _set])
+        _set = "_test"
+        score = self.model.evaluate(self.data_dict["X" + _set],
+                                    self.data_dict["y" + _set])
 
         print("\n\nDev Loss: {:1.4f}".format(score[0]))
         print("Dev Accuracy: {:2.3f}\n".format(score[1] * 100.0))
 
-        # if score_test is True or score[0] < 0.18:
-        #     _set = "_test"
-        #
-        #     score = self.model.evaluate([self.train_data_dict["X_images" + _set], self.train_data_dict["inc_angle" + _set]],
-        #                                  self.train_data_dict["y" + _set])
-        #
-        #     print("\n\nTest Loss: {:1.4f}".format(score[0]))
-        #     print("Test Accuracy: {:2.3f}\n".format(score[1] * 100.0))
-        #
-        #     return score[0]
-
         return score[0]
 
-
     def plot_hist(self, hist):
-        fig, axs = plt.subplots(1,2,figsize=(16, 8))
+        fig, axs = plt.subplots(1, 2, figsize=(16, 8))
 
         info_str = "v1_epochs_{}_lr_{}_lrdecay_{}_batch_{}_dropout_{}.png".format(self.epochs,
                         self.learning_rate,
@@ -295,10 +297,14 @@ class Titanic(object):
 
         fig.suptitle(info_str, fontsize=12, fontweight='normal')
 
-        major_ticks = int(self.epochs/10.0)
-        minor_ticks = int(self.epochs/20.0)
-        if major_ticks < 2: major_ticks = 2
-        if minor_ticks < 1: minor_ticks = 1
+        major_ticks = int(self.epochs / 10.0)
+        minor_ticks = int(self.epochs / 20.0)
+
+        if major_ticks < 2:
+            major_ticks = 2
+
+        if minor_ticks < 1:
+            minor_ticks = 1
 
         majorLocator = MultipleLocator(major_ticks)
         majorFormatter = FormatStrFormatter('%d')
@@ -345,7 +351,6 @@ class Titanic(object):
         plt.savefig("../imgs/" + info_str, facecolor='w', edgecolor='w', transparent=False)
         # plt.show()
 
-
     def get_callbacks(self):
         # es = EarlyStopping('val_loss', patience=patience, mode="min")
 
@@ -357,7 +362,7 @@ class Titanic(object):
         # return [msave, tboard]
         return [earlyStopping, mcp_save, reduce_lr_loss]
 
-    def shuffle_training_data(self):
+    def shuffle_training_data(self, X, y):
         '''
         See if randomizing the order helps with training because otherwise it
         would be the same pic 8, 32, whatever times in a row which probably
@@ -365,14 +370,11 @@ class Titanic(object):
         '''
         # random shuffle the arrays because currently it's first half original
         # second half mirror. This might cause some weirdness in training?
-        p = np.random.permutation(self.train_data_dict["X_images_train"].shape[0])
+        p = np.random.permutation(X.shape[0])
 
         print("shuffle augmented data")
         # now shuffly augmented data:
-        self.train_data_dict["X_images_train"][p]
-        self.train_data_dict["inc_angle_train"][p]
-        self.train_data_dict["y_train"][p]
-
+        return X[p], y[p]
 
     def amplify_data(self, data):
             '''
@@ -382,10 +384,9 @@ class Titanic(object):
 
             return np.concatenate(temp)
 
-
     def data_augmentation(self, imgs):
         #############################################
-        ### Flip Left/right for data augmentation ###
+        # Flip Left/right for data augmentation #####
         #############################################
 
         # keep track of how much the data is augmented
@@ -438,28 +439,27 @@ class Titanic(object):
 
         return double_imgs, channel_mult
 
-
-    def train_dev_test_split(self, _vars, seed1=1337, seed2=1338, test_size=0.01, dev_size=0.25):
+    def train_test_split(self, X, y, seed1=1337, test_size=0.15):
             '''
             Like SK-Learn's train_test_split but uses a randomly shuffled index to correctly
             split 3 or more items instead of just 2 for train_test_split
 
             Parameters:
-            vars:       tuple of (X_images, inc_angle, y_labels)
+            X:          images of all data
+            y:          labels of all data
             seed1:      seed for the split that pulls the test set out
-            seed2:      seed for the split that does normal train/dev split
             test_size:  what ratio of data to pull out for test set
-            dev_size:   what ratio f data to pull out for dev set
 
-            Creates dictionary with:
-                        X_images_train, X_images_dev, X_images_test
-                        inc_angle_train, inc_angle_dev, inc_angle_test
-                        y_train, y_dev, y_test
+            Creates self.data_dict:
+                X_train, y_train, X_test, y_test
+
             Returns:
-            None
+                None
             '''
 
-            _len = _vars[0].shape[0]
+            print("y[:50]", y[np.isnan(y)])
+
+            _len = X.shape[0]
 
             # make a shuffled list of indices
             indices = np.random.RandomState(seed1).permutation(_len)
@@ -469,27 +469,22 @@ class Titanic(object):
             test_indices = indices[test_index:]
 
             # gather the leftover indices
-            remaining_indices = indices[:test_index]
+            train_indices = indices[:test_index]
 
-            # figure out which indices belong in the dev set
-            dev_index = int(remaining_indices.shape[0] * (1 - dev_size))
-            dev_indices = remaining_indices[dev_index:]
+            self.data_dict = {}
 
-            # finally gather the training set indices
-            train_indices = remaining_indices[:dev_index]
+            self.data_dict["X_train"] = X[train_indices]
+            self.data_dict["y_train"] = y[train_indices]
 
-            self.train_data_dict = {}
-            self.train_data_dict["X_images_train"] = _vars[0][train_indices]
-            self.train_data_dict["inc_angle_train"] = _vars[1][train_indices]
-            self.train_data_dict["y_train"] = _vars[2][train_indices]
+            self.data_dict["X_test"] = X[test_indices]
+            self.data_dict["y_test"] = y[test_indices]
 
-            self.train_data_dict["X_images_dev"] = _vars[0][dev_indices]
-            self.train_data_dict["inc_angle_dev"] = _vars[1][dev_indices]
-            self.train_data_dict["y_dev"] = _vars[2][dev_indices]
+            print("y_train[:50]", self.data_dict["y_train"][np.isnan(self.data_dict["y_train"])])
 
-            self.train_data_dict["X_images_test"] = _vars[0][test_indices]
-            self.train_data_dict["inc_angle_test"] = _vars[1][test_indices]
-            self.train_data_dict["y_test"] = _vars[2][test_indices]
+            # print(self.data_dict["X_train"].shape)
+            # print(self.data_dict["y_train"].shape)
+            # print(self.data_dict["X_test"].shape)
+            # print(self.data_dict["y_test"].shape)
 
     def standardize(self, feature_data, _key):
         '''
@@ -520,7 +515,6 @@ class Titanic(object):
             self.standardization_params[_key] = (_mean, _std)
 
             return (feature_data - _mean) / (_std * 1.0)
-
 
     def scaler(self, feature_data, _key):
         '''
@@ -556,36 +550,21 @@ class Titanic(object):
     def data_pipeline(self, raw_data):
         # Generate the training data
         # Create 3 bands having HH, HV and avg of both
+        # Modified for v2 to only have 2 channels
+        #
+        # TODO: if doing special transformations then do it to both X_1 and X_2
+        #       and not to an extra channel.  This on the theory that adding a
+        #       weird transformation will make the data that the filters are
+        #       looking at inconsistent. If you do 'worms' then do it to all,
+        #       not just some.  Not sure if this is a good idea but worth trying
+
         X_band_1 = np.array([np.array(band).astype(np.float32).reshape(75, 75) for band in raw_data["band_1"]])
         X_band_2 = np.array([np.array(band).astype(np.float32).reshape(75, 75) for band in raw_data["band_2"]])
-
-        # default case: find the mean of both channels
-        if self.c3_transform is 0:
-            X_band_3 = (X_band_1 + X_band_2) / 2.0
-
-        # case 1 do blur
-        elif self.c3_transform is 1:
-            X_band_3 = self.blur_images((X_band_1 + X_band_2) / 2.0)
-
-        # average then squared
-        elif self.c3_transform is 2:
-            X_band_3 = np.square((X_band_1 + X_band_2) / 2.0)
-
-        # subtract band_2 from band_1
-        elif self.c3_transform is 3:
-            X_band_3 = (X_band_1 - X_band_2)
-
-        # do a "worm" convolution/edge detect
-        elif self.c3_transform is 4:
-            X_band_3 = (X_band_1+X_band_2)/2
-
-            X_band_3 = np.array([self.get_worms(band) for band in X_band_3])
 
         if self.standardization_params is not None:
             # Done: need to normalize data at some point
             X_band_1 = self.standardize(X_band_1, "c0")
             X_band_2 = self.standardize(X_band_2, "c1")
-            X_band_3 = self.standardize(X_band_3, "c2")
 
             # img_shape is (75, 75, 3) normally but could in theory
             # get 4 or 5 channels
@@ -599,28 +578,22 @@ class Titanic(object):
             # Done: need to normalize data at some point
             X_band_1 = self.standardize(X_band_1, "c0")
             X_band_2 = self.standardize(X_band_2, "c1")
-            X_band_3 = self.standardize(X_band_3, "c2")
-
-            # X_band_1 = self.scaler(X_band_1, "c0")
-            # X_band_2 = self.scaler(X_band_2, "c1")
-            # X_band_3 = self.scaler(X_band_3, "c2")
 
         # restack the channels into one matrix 3 'colors' deep
         data = np.concatenate([X_band_1[..., np.newaxis],
-                               X_band_2[..., np.newaxis],
-                               X_band_3[..., np.newaxis]],
+                               X_band_2[..., np.newaxis]],
                               axis=-1)
 
         return data
 
     def get_worms(self, data):
-        xderivative = np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
-        yderivative = np.array([[1,2,1],[0,0,0],[-1,-2,-1]])
+        xderivative = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+        yderivative = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
         arrx = signal.convolve2d(data, xderivative, mode="valid")
         arry = signal.convolve2d(data, yderivative, mode="valid")
         worms = np.hypot(arrx, arry)
 
-        worms = np.lib.pad(worms, ((1,1), (1,1)), "mean")
+        worms = np.lib.pad(worms, ((1, 1), (1, 1)), "mean")
 
         return worms
 
