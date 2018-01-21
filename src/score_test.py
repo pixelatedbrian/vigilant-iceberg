@@ -124,7 +124,7 @@ def main():
     # has the (mean, std) from standardizing inc_angle earlier
     # test_inc_angle, _ = standardize(test_inc_angle, inc_std_params)
 
-    print("test_inc_angle", test_inc_angle[:10]* 100)
+    print("test_inc_angle", test_inc_angle[:10])
 
     # because there used to be a column for inc_angle isnan, but that seems
     # to cause issues as that only occurs in training data but not test data
