@@ -418,7 +418,7 @@ def model5(learning_rate=0.001, lr_decay=1e-6, drop_out=0.2, input_shape=(75, 75
     X = MaxPooling2D((3, 3), strides=(2, 2), name="max_pool1")(X)
 
     # drop_out
-    # X = Dropout(drop_out)(X)
+    X = Dropout(drop_out)(X)
 
     ##############
     ### CONV 2 ###
@@ -451,7 +451,7 @@ def model5(learning_rate=0.001, lr_decay=1e-6, drop_out=0.2, input_shape=(75, 75
     X = MaxPooling2D((2, 2), strides=(2, 2), name="max_pool3")(X)
 
     # drop_out
-    # X = Dropout(drop_out)(X)
+    X = Dropout(drop_out)(X)
 
     ##############
     ### CONV 4 ###
@@ -466,7 +466,7 @@ def model5(learning_rate=0.001, lr_decay=1e-6, drop_out=0.2, input_shape=(75, 75
     X = MaxPooling2D((2, 2), strides=(2, 2), name="max_pool4")(X)
 
     # drop_out
-    # X = Dropout(drop_out)(X)
+    X = Dropout(drop_out)(X)
 
     # FLATTEN -> FC
     X = Flatten()(X)
@@ -475,7 +475,7 @@ def model5(learning_rate=0.001, lr_decay=1e-6, drop_out=0.2, input_shape=(75, 75
     X = Dense(1024, name="fc0")(X)
     # X = BatchNormalization(name="bn_fc0")(X)
     X = Activation("relu")(X)
-    X = Dropout(drop_out * 2.0)(X)
+    X = Dropout(drop_out)(X)
 
     # FC
     X = Dense(512, name="fc1")(X)

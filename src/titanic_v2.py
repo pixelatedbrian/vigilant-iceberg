@@ -172,14 +172,24 @@ class Titanic(object):
         self.plot_hist(hist)
 
         print("score model")
-        score_test = self.new_score_model()
+        train_loss, test_loss = self.new_score_model()
 
-        print("score of test set:", score_test)
+        print("score of test set:", test_loss)
 
-        if score_test <= 0.195:
+        # try to log data so we can keep track what is going on
+        with open("scores.txt", "a") as outfile:
+            out = "{:0.5f}~{:0.5f}~{:0.6f}~{:0.8f}~{:0.6f}~{:03d}\n".format(test_loss,
+                                                                            train_loss,
+                                                                            self.learning_rate,
+                                                                            self.lr_decay,
+                                                                            self.drop_out,
+                                                                            self.batch_size)
+            outfile.write(out)
+
+        if test_loss <= 0.175:
 
             print("Save Model Weights with dev score:")
-            score_text = ("{:0.3f}_".format(score_test)).replace(".", "_")
+            score_text = ("{:0.3f}_".format(test_loss)).replace(".", "_")
             self.model.save_weights(score_text + self.file_path)
             # load and score the test set
             self.predict_test_set(score_text)
@@ -275,6 +285,8 @@ class Titanic(object):
         print("\n\nTrain Loss: {:1.4f}".format(score[0]))
         print("Train Accuracy: {:2.3f}\n".format(score[1] * 100.0))
 
+        train_loss = score[0]
+
         # dev set scoring
         _set = "_test"
         score = self.model.evaluate(self.data_dict["X" + _set],
@@ -283,16 +295,18 @@ class Titanic(object):
         print("\n\nDev Loss: {:1.4f}".format(score[0]))
         print("Dev Accuracy: {:2.3f}\n".format(score[1] * 100.0))
 
-        return score[0]
+        test_loss = score[0]
+
+        return train_loss, test_loss
 
     def plot_hist(self, hist):
         fig, axs = plt.subplots(1, 2, figsize=(16, 8))
 
-        info_str = "v1_epochs_{}_lr_{}_lrdecay_{}_batch_{}_dropout_{}.png".format(self.epochs,
-                        self.learning_rate,
-                        self.lr_decay,
-                        self.batch_size,
-                        self.drop_out)
+        info_str = "m2_c1_epochs_{:03d}_lr_{:0.5f}_lrdecay_{:0.3f}_batch_{:03d}_dropout_{:0.5f}.png".format(self.epochs,
+                                                                                                            self.learning_rate,
+                                                                                                            self.lr_decay,
+                                                                                                            self.batch_size,
+                                                                                                            self.drop_out)
         info_str = info_str.replace("1e-", "")
 
         fig.suptitle(info_str, fontsize=12, fontweight='normal')
