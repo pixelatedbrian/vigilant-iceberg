@@ -302,7 +302,7 @@ class Titanic(object):
     def plot_hist(self, hist):
         fig, axs = plt.subplots(1, 2, figsize=(16, 8))
 
-        info_str = "m2_c1_epochs_{:03d}_lr_{:0.5f}_lrdecay_{:0.3f}_batch_{:03d}_dropout_{:0.5f}.png".format(self.epochs,
+        info_str = "m2_c1_epochs_{:03d}_lr_{:0.5f}_lrdecay_{:0.8f}_batch_{:03d}_dropout_{:0.5f}.png".format(self.epochs,
                                                                                                             self.learning_rate,
                                                                                                             self.lr_decay,
                                                                                                             self.batch_size,
@@ -368,9 +368,9 @@ class Titanic(object):
     def get_callbacks(self):
         # es = EarlyStopping('val_loss', patience=patience, mode="min")
 
-        earlyStopping = EarlyStopping(monitor='val_loss', patience=16, verbose=1, mode='min')
+        earlyStopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='min')
         mcp_save = ModelCheckpoint(self.file_path, save_best_only=True, monitor='val_loss', mode='min')
-        reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=8, verbose=1, epsilon=1e-4, mode='min')
+        reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1, epsilon=1e-4, mode='min')
         # tboard = TensorBoard(log_dir='../logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
         # return [es, msave]
         # return [msave, tboard]

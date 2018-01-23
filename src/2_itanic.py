@@ -5,10 +5,10 @@ import numpy as np
 def main():
     for x in range(40):
 
-        lr = np.random.uniform(0.00001, 0.01)
+        lr = np.random.uniform(0.00001, 0.0075)
         drop_out = np.random.uniform(0.15, 0.60)
 
-        batches = [8, 16, 32, 64, 128, 256]
+        batches = [16, 24, 32, 48, 64]
         batch_size = batches[np.random.randint(0, len(batches) - 1)]
         lr_decay = np.random.uniform(-10, -3.3)
         lr_decay = 4**lr_decay
@@ -16,7 +16,7 @@ def main():
         print("\n\nlr{:0.4f} do{:0.3f} bs{:3d} lrd{:0.4f}\n\n".format(lr, drop_out, batch_size, lr_decay))
 
         titanic = Titanic(model_name="model2",
-                          epochs=50,
+                          epochs=100,
                           lr=lr,
                           drop_out=drop_out,
                           batch_size=batch_size,
