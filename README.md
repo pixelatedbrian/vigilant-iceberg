@@ -14,3 +14,6 @@ Please see this post contest report by the second place contestant in which he u
 #### Results
 
 On the final leader board I placed 372/3,343 teams. This was my first Kaggle competition and I learned a lot. I'm looking forward to my next challenge.
+
+![competition results](https://github.com/pixelatedbrian/vigilant-iceberg/tree/master/imgs/report/log_scores.png)
+Scores above 1.0 were clipped as those scores weren't remotely competitive and skewed the distribution even further. Then Log10 transformation of scores was performed because initial distribution was log normal.
