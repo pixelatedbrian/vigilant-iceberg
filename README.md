@@ -1,21 +1,25 @@
-### Brian Hardenstein's entry for the Kaggle/Statoil Iceberg/Ship Classification Contest
-### [pixelatedbrian](https://www.github.com/pixelatedbrian/vigilant-iceberg)
+## Brian Hardenstein's entry for the Kaggle/Statoil Iceberg/Ship Classification Contest
+[pixelatedbrian](https://www.github.com/pixelatedbrian/vigilant-iceberg)
 
-#### Contest Overview
+### Contest Overview
+====================
 
-Use data from Kaggle and Statoil to make a classifier that predicts if something is an iceberg or a ship.  The data provided is:
+Use data from Kaggle and Statoil to make a classifier that predicts if something is an iceberg or a ship.
+
+**The data provided is:**
 * two bands of radar
 * satellite incidence angle
 * is_iceberg label
 * unique identifier
 
-The scoring of the contest was the lowest log error on predicted values on a validation set.
+Scoring: Lowest log loss on predicted values on a validation set.
 
-Additionally because so much of Kaggle contests revolves around impractical ensembles of models an additional constraint of using only a single model was imposed. (Which may have been too restrictive.)
+Additionally because so much of Kaggle contests revolves around impractical ensembles of models an additional self-imposed constraint of using only a single model was followed. (Which may have been too restrictive.)
 
-Example: Second place contestant used a weighted average of ~100 ensembled models. [Beluga 2nd Place](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294)
+Example: Second place contestant used a weighted average of ~100 ensembled N.N. models. [Beluga 2nd Place](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294)
 
-#### Results
+### Results
+===========
 ![competition results](/imgs/report/log_scores.png)
 Scores above 1.0 were clipped as those scores weren't remotely competitive and skewed the distribution even further. Then Log10 transformation of scores was performed because initial distribution was log normal.
 
