@@ -1,26 +1,20 @@
 # Brian Hardenstein's entry for the Kaggle/Statoil Iceberg/Ship Classification Contest
-[pixelatedbrian](https://www.github.com/pixelatedbrian/vigilant-iceberg)
-
 ## Contest Overview
-
 Use data from Kaggle and Statoil to make a classifier that predicts if something is an iceberg or a ship.
 
 **The data provided is:**
-* unique identifier
-* two bands of radar
-* satellite incidence angle
-* is_iceberg label
+unique identifier, two bands of radar data in log format, satellite incidence angle, is_iceberg label
 
 | id | band1 | band2 | inc_angle | is_iceberg |
 |:--:|:-----:|:-----:|:----------|:----------:|
-|'aaa'|[...]|[...]|32.403|1|
-|'rd1'|[...]|[...]|43.279|0|
-|'bnf'|[...]|[...]|40.923.403|1|
-|'kr2'|[...]|[...]|NaN|0|
+|'aaa'|[...]|[...]|32.403|1.0|
+|'rd1'|[...]|[...]|43.279|0.0|
+|'bnf'|[...]|[...]|40.923|1.0|
+|'kr2'|[...]|[...]|NaN|0.0|
 
-Scoring: Lowest log loss on predicted values on a validation set.
+**Scoring:** Lowest log loss on predicted values on a validation set.
 
-Additionally because so much of Kaggle contests revolves around impractical ensembles of models an additional self-imposed constraint of using only a single model was followed. (Which may have been too restrictive.)
+_Additionally because so much of Kaggle contests revolves around impractical ensembles of models an additional self-imposed constraint of using only a single model was followed. (Which may have been too restrictive.)_
 
 Example: Second place contestant used a weighted average of ~100 ensembled N.N. models. [Beluga 2nd Place](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294)
 
