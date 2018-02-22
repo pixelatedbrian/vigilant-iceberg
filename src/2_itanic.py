@@ -21,9 +21,9 @@ def main():
                           drop_out=drop_out,
                           batch_size=batch_size,
                           lr_decay=lr_decay,
-                          augment_rotate=False,
+                          augment_rotate=True,
                           augment_ud=True,
-                          c3_transform=1)
+                          c3_transform=0)
 
         # titanic = Titanic(model_name="model2",
         #                   epochs=50,

@@ -40,8 +40,7 @@ class Titanic(object):
                  batch_size=32,
                  epochs=100,
                  augment_rotate=False,
-                 augment_ud=True,
-                 c3_transform=0):
+                 augment_ud=True):
 
         # paths to the data
         self.train_path = "../data/train.json"
@@ -68,7 +67,6 @@ class Titanic(object):
         self.epochs = epochs
         self.augment_rotate = augment_rotate
         self.augment_ud = augment_ud
-        self.c3_transform = c3_transform
 
         self.img_shape = (75, 75, 2)
 
@@ -300,17 +298,39 @@ class Titanic(object):
         return train_loss, test_loss
 
     def plot_hist(self, hist):
+        '''
+        Make a plot of the rate of error as well as the accuracy of the model
+        during training.  Also include a line at error 0.20 which was the original
+        minimum acceptable error (self imposed) to submit results to the test
+        set when doing 3-way split.
+
+        Even after performance regularly exceeded the minimum requirement the line
+        was unchanged so that all of the graphs would be relative to each other.
+        Also it was still useful to see how a model's error was performing relative
+        to this baseline.
+
+        Also, the 2 charts written as a png had the filename coded to include
+        hyperparameters that were used in the model when the chart was created.
+        This allowed a simple visual evaluation of a model's performance when
+        doing randomized hyperparameter search. If a model appeared to be high
+        performing then the values could be reused in order to attempt to
+        replicate the result.
+        '''
         fig, axs = plt.subplots(1, 2, figsize=(16, 8))
 
-        info_str = "m2_c1_epochs_{:03d}_lr_{:0.5f}_lrdecay_{:0.8f}_batch_{:03d}_dropout_{:0.5f}.png".format(self.epochs,
-                                                                                                            self.learning_rate,
-                                                                                                            self.lr_decay,
-                                                                                                            self.batch_size,
-                                                                                                            self.drop_out)
+        # this will become the filename with hyperparameter information
+        info_str = "m2_c1_epochs_{:03d}_lr_{:0.5f}_lrdecay_\
+                {:0.8f}_batch_{:03d}_dropout_{:0.5f}.png".format(self.epochs,
+                                                                 self.learning_rate,
+                                                                 self.lr_decay,
+                                                                 self.batch_size,
+                                                                 self.drop_out)
         info_str = info_str.replace("1e-", "")
 
         fig.suptitle(info_str, fontsize=12, fontweight='normal')
 
+        # stuff for marking the major and minor ticks dynamically relative
+        # to the numper of epochs used to train
         major_ticks = int(self.epochs / 10.0)
         minor_ticks = int(self.epochs / 20.0)
 
@@ -332,6 +352,7 @@ class Titanic(object):
 
         x_line = [0.2] * (self.epochs + 1)
 
+        # stuff for the loss chart
         axs[0].set_title("Iceberg/Ship Classifier Loss Function Error\n Train Set and Dev Set")
         axs[0].set_xlabel('Epochs')
         axs[0].set_xlim(1, self.epochs)
@@ -348,6 +369,7 @@ class Titanic(object):
         # for the minor ticks, use no labels; default NullFormatter
         axs[0].xaxis.set_minor_locator(minorLocator)
 
+        # stuff for the accuracy chart
         axs[1].set_title("Iceberg/Ship Classifier Accuracy\n Train Set and Dev Set")
         axs[1].set_xlabel('Epochs')
         axs[1].set_xlim(1, self.epochs)
@@ -366,14 +388,36 @@ class Titanic(object):
         # plt.show()
 
     def get_callbacks(self):
+        '''
+        Takes no parameters but has some relatively important hyperparameters.
+
+        earlyStopping:  controls how patient, or impatient, early stopping is.
+                        depending on the speed of fitting the model as well as the
+                        desired rate of iteration sometimes more patience is needed.
+                        For example when using rotation data augmentation less.
+
+                        patience is needed as each epoch is effectively 4x larger
+        mcp_save:       doesn't typically need to be modified. Simply save the best
+                        performing weights encountered during training
+
+        reduce_lr_loss: another relatively important hyperparameter. It's importance
+                        seems to be relative to the learning_rate configured for
+                        the model overall. This can be more useful/important when
+                        LR seems to be on the higher range. Also needs to be made
+                        less patient if data augmentation is creating larger/longer
+                        epochs.
+        '''
         # es = EarlyStopping('val_loss', patience=patience, mode="min")
 
-        earlyStopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='min')
+        earlyStopping = EarlyStopping(monitor='val_loss', patience=8, verbose=1, mode='min')
         mcp_save = ModelCheckpoint(self.file_path, save_best_only=True, monitor='val_loss', mode='min')
-        reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1, epsilon=1e-4, mode='min')
+        reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=4, verbose=1, epsilon=1e-4, mode='min')
+
+        # if you want to experiment with following model progress 'realtime'
+        # then enable TensorBoard
+
         # tboard = TensorBoard(log_dir='../logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
-        # return [es, msave]
-        # return [msave, tboard]
+
         return [earlyStopping, mcp_save, reduce_lr_loss]
 
     def shuffle_training_data(self, X, y):
@@ -381,6 +425,16 @@ class Titanic(object):
         See if randomizing the order helps with training because otherwise it
         would be the same pic 8, 32, whatever times in a row which probably
         would have an impact on model learning.
+
+        Parameters:
+        X:      the data being trained upon that will be shuffled
+                numpy array of shape=(m, 75, 75)
+        y:      the labels being trained to which need to be shuffled in the
+                same order as X
+                numpy array of shape=(m, 1)
+
+        Returns:
+        X, y    # shuffled
         '''
         # random shuffle the arrays because currently it's first half original
         # second half mirror. This might cause some weirdness in training?
@@ -391,14 +445,67 @@ class Titanic(object):
         return X[p], y[p]
 
     def amplify_data(self, data):
-            '''
-            Basically multiply whatever data and return it again
-            '''
-            temp = [data for idx in range(self.data_amp)]
+        '''
+        Basically multiply whatever data and return it again
+        '''
+        temp = [data for idx in range(self.data_amp)]
 
-            return np.concatenate(temp)
+        return np.concatenate(temp)
 
     def data_augmentation(self, imgs):
+        '''
+        Data for this project is not large. ~1500 samples. In order to try to
+        get higher performance this method was created to augment data. This
+        should help reduce overfitting and also help the model generalize to
+        more scenarios which it didn't necessarily see in the original training
+        data.
+
+        This was experimented with a lot in the process and ultimately it was
+        found that flip/flop augmentation seemed to help significantly but
+        somewhat counter intuitively orthagonal rotation augmentation appeared
+        to have no benefit but at the same time had the expense of ~4x the training
+        time.
+
+        Hypothesize that the final submitted model may not have had enough
+        complexity to fully generalize against all types of augmentation.
+        Could also have been simply overfitting to the test data while the
+        leaderboard evaluation could have improved given more time with o-rotated
+        augmentation.
+
+        Method uses an important variable that is eventually returned called
+        'channel_mult'.  This is important if inc_angle is being concatenated
+        into the model. If we augment the images by 8x then we also need to
+        multiply the inc_angle array by 8x so that the values still line up.
+
+        Parameters:
+        imgs:       numpy array of images in shape=(m, 75, 75, channels)
+                    For later versions of models channels was actually just 2
+                    typically. It will work with 3 channels but it was found
+                    that 3 channels was arbitrarily used for working with
+                    transfer learning models that expected RGB (3) channels.
+                    Since I used a newly trained model and there were 2 channels
+                    of radar data only 2 channels were used.
+
+                    Kaggle people typically had a 3rd channel that averaged the
+                    results of the first two channels. This was evaluated but
+                    appeared to not help.
+
+        Class Parameters:
+        self.augment_ud:    True/False  #   Augment by flipping up/down
+        NOTE:   this method ALWAYS flips left/right as it would seem that
+                this would not screw up inc_angle relevance where as vertical
+                flipping may well not make sense with inc_angle.
+                (Might need to do something like 180 - inc_angle for vertical
+                flipping?)
+        self.augment_rotate:True/False  #   Augment by rotating orthagonaly
+
+        Returns:
+        augmented_imgs:     numpy array of images in
+                            shape=(m*channel_mult, 75, 75, channels)
+        channel_mult:       how much data augmentation occurred so inc_angle
+                            can be correctly scaled.
+        '''
+
         #############################################
         # Flip Left/right for data augmentation #####
         #############################################
@@ -435,7 +542,7 @@ class Titanic(object):
             # add the new axis now and it will save work later
             new_data.append(new_channel[..., np.newaxis])
 
-        double_imgs = np.concatenate(new_data, axis=-1)
+        augmented_imgs = np.concatenate(new_data, axis=-1)
 
         # ok, try to rotate each image 90 degrees
         if self.augment_rotate is True:
@@ -445,13 +552,13 @@ class Titanic(object):
             for ibx in range(3):
                 # rotation transform matrix for OpenCV
                 M = cv2.getRotationMatrix2D((75 / 2, 75 / 2), 90 + 90 * ibx, 1)
-                res = np.array([cv2.warpAffine(img, M, (75, 75)) for img in double_imgs])
+                res = np.array([cv2.warpAffine(img, M, (75, 75)) for img in augmented_imgs])
 
-                double_imgs = np.concatenate([double_imgs, res])
+                augmented_imgs = np.concatenate([augmented_imgs, res])
 
-        print("Channel_mult", channel_mult)
+        # print("Channel_mult", channel_mult)
 
-        return double_imgs, channel_mult
+        return augmented_imgs, channel_mult
 
     def train_test_split(self, X, y, seed1=1337, test_size=0.15):
             '''
@@ -464,7 +571,7 @@ class Titanic(object):
             seed1:      seed for the split that pulls the test set out
             test_size:  what ratio of data to pull out for test set
 
-            Creates self.data_dict:
+            Creates Titanic class self.data_dict:
                 X_train, y_train, X_test, y_test
 
             Returns:
@@ -539,16 +646,34 @@ class Titanic(object):
         mean and std. Use the values being passed in as a tuple of mean and std
         looking like:
             (mean, std)
+
+        Parameters:
+            feature_data -  numpy array with raw image data
+                            shape=(m=~1500, 75, 75, channels=2)
+            _key -          the key that corresponds to the channel being standardized.
+
+        Class Data Modified:
+        If the self.standardization_params dictionary doesn't exist (None) then
+        it will be created and seeded with key:value pair consisting of
+            channel_key: tuple(mean, std)
+            ex:  'c0': (1.39, 0.78)
+
+        Returns:
+        data that has been scaled via vectorized operation
         '''
 
         # see if the key is in the parameter dictionary keys. If it is then
-        # load data needed from that. Otherwise add key/value pair to dict
+        # load data needed from that.
         if _key in self.standardization_params.keys():
 
             temp_mean = self.standardization_params[_key][0]
             temp_maxmin = self.standardization_params[_key][1]
 
+            # NOTE: the actual operation of standardizing is a vectorized
+            # operation executing on a numpy array.
             return (feature_data - temp_mean) / temp_maxmin
+
+        # Otherwise add key/value pair to dict
         else:
             # make a shallow copy so that we don't mess up values when we work
             # on the arrays
@@ -559,9 +684,44 @@ class Titanic(object):
             # add key/value pair to dictionary
             self.standardization_params[_key] = (_mean, _maxmin)
 
+            # NOTE: the actual operation of standardizing is a vectorized
+            # operation executing on a numpy array.
             return (feature_data - _mean) / _maxmin
 
     def data_pipeline(self, raw_data):
+        '''
+        Take in raw data, standardize it, and return that data
+        Because the means and standard deviations used during training should,
+        for consistency, also be applied to validation or final predictions as
+        well: the Titanic class maintain's a dictionary of standardization
+        parameters. ie: self.standardization_params
+
+        So when standardization is performed we check for this dictionary to see
+        if it exists or if it is None.  If it is None then we create the dictionary
+        using the values from the training data and remember those values so
+        later if this data_pipeline method is run on imgs that are to be predicted
+        upon the same MEAN and STD should be used.
+
+        However this currently only works during online predictions. So when we
+        have trained and fitted a model, it scores well, so we predict the
+        leaderboard test case, this will work.
+
+        If we load a previously trained model and try to predict then currently
+        this will NOT use the train MEAN and STD, instead finding
+        self.standardization_params to be None it will recalculate the values.
+        For production environments where predictions were ongoing with the
+        fitted weights the standardization_params dictionary would need to be
+        serialized and written to disk, to be read when later making predictions.
+
+        Parameters:
+        raw_data:   radar data read in from the JSON file's provided
+                    numpy array in shape=(m=~1500, 75, 75, channels=2)
+
+        Returns:
+        data:       standardized data in the form of numpy array
+                    shape=(m=~1500, 75, 75, channels=2)
+
+        '''
         # Generate the training data
         # Create 3 bands having HH, HV and avg of both
         # Modified for v2 to only have 2 channels
@@ -571,6 +731,13 @@ class Titanic(object):
         #       weird transformation will make the data that the filters are
         #       looking at inconsistent. If you do 'worms' then do it to all,
         #       not just some.  Not sure if this is a good idea but worth trying
+
+        # currently hard coded to 2 channels
+        # Attemped to use 3 or 4 channels, with the 3rd (and 4th) would have
+        # different transformations. ie channel 1, 2 are un-engineered data
+        # while 3, 4 are 'worms' engineered data
+        # this performed horribly using 1 extra channel or 2.
+        # Hypothesize what happened is that the network being used
 
         X_band_1 = np.array([np.array(band).astype(np.float32).reshape(75, 75) for band in raw_data["band_1"]])
         X_band_2 = np.array([np.array(band).astype(np.float32).reshape(75, 75) for band in raw_data["band_2"]])
@@ -601,6 +768,17 @@ class Titanic(object):
         return data
 
     def get_worms(self, data):
+        '''
+        Feature engineering of edge detection.  Probably evaluated and rejected,
+        definitely as a 3rd channel. But 3rd channel probably didn't work because
+        the model was not complex enough to learn to fit to normal data as well
+        as engineered data.
+
+        An ensemble might be possible, or else a model with a larger depth.
+
+        # TODO: Circle back and evaluate the feature engineering on a single
+        model. ie both channels engineered, rather than an different 3rd/4th channel
+        '''
         xderivative = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
         yderivative = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
         arrx = signal.convolve2d(data, xderivative, mode="valid")
@@ -614,6 +792,10 @@ class Titanic(object):
     def blur_images(self, imgs, perc_chop=60):
         '''
         Takes in an array of images and modifies them with blur filtering
+        Evaluated as 3rd channel but again didn't help at all.
+
+        TODO:   try a solo model with this, and perhaps ensemble normal and blur
+                model predictions
 
         returns an array of images with the same shape as passed in
         '''
