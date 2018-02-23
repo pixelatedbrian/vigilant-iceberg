@@ -14,8 +14,10 @@ import keras
 '''
     v2
 
-    Modified to not take in/concatenate inc_angle (making things worse?)
-    Reduce color channels to 2 because the 3rd channel right now usually just
+    *   Modified to not take in/concatenate inc_angle (repeated evaluations show
+        that including inc_angle is increasing error)
+
+    *   Reduce color channels to 2 because the 3rd channel right now usually just
         involes a really lame transformtion of some kind.
 '''
 

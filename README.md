@@ -16,17 +16,33 @@ unique identifier, two bands of radar data in log format, satellite incidence an
 
 _Additionally because so much of Kaggle contests revolves around impractical ensembles of models an additional self-imposed constraint of using only a single model was followed. (Which may have been too restrictive.)_
 
-Example: Second place contestant used a weighted average of ~100 ensembled N.N. models. [Beluga 2nd Place](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294)
+**Example:** [Beluga 2nd Place Contestant](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294) used a weighted average of ~100 ensembled N.N. models.
 
 ## Results
 ![competition results](/imgs/report/log_scores.png)
-Scores above 1.0 were clipped as those scores weren't remotely competitive and skewed the distribution even further. Then Log10 transformation of scores was performed because initial distribution was log normal.
+###### **_Scores above 1.0 were clipped as those scores weren't remotely competitive and skewed the distribution even further. Then Log10 transformation of scores was performed because initial distribution was log normal._**
 
-On the final leader board I placed 372nd out of 3,343 teams, or roughly top 11%. This was my first Kaggle competition. Before this contest I had recently completed a DeepLearning.ai Coursera course by Andrew Ng on Convolutional Neural Networks. I'd like to take a moment to thank Professor Ng and his team for sharing their knowledge in a manner that was immediately useful.
+On the final leader board I placed 372nd out of 3,343 teams, or roughly top 11%. This was my first Kaggle competition.
 
-I evaluated about 10 different convolutional networks, including a couple of instances of transfer learning. (Inception v3 and VGG 19) I primarily iterated on about 6 N.N.s that are found in this repo's /src/model_zoo.py.  Model 2 ultimately had the best performance and with extensive hyperparameter tuning was finally used for the final submissions which resulted in my final ranking.
+- Used AWS p2.xlarge instance running Ubuntu 16.04 with Nvidia K80 GPU
+..* Created custom AWS AMI image for faster deployment of spot instances
+..* [AMI Details Here](https://pixelatedbrian.github.io/2018-01-12-AWS-Deep-Learning-with-GPU/)
+- ~10 different convolutional networks evaluated
+- 2 Transfer learning models evaluated, Inception v3 & VGG 17
+..* Experimentation found that transfer learning models massively overfit
+..* Hypothesize that the small 'image' size caused issues here
+..* Also the shapes/textures/features for the image nets really didn't apply to the data provided
+..* Finally as there were 2 channels of radar data a third channel had to be synthesized in order to pretend to be the 3rd color channel for the RGB ConvNets
+- [~6 newly trained architectures evaluated](/src/model_zoo_v2.py)
+..* Final submission only used 2 channels of 'color'
+..* Training from scratch enabled the networks to learn specific features of the radar data
+..* Multiple transformations were attempted as well as blurring and noise cropping. The one with the most potential was a derivative edge detection algorithm.
+..* As the image transformations increased error hypothesize that a few networks trained on transformations individually with their predictions then ensembled would perform better.
+..* Custom models trained tended to take about 15min per run to train on AWS p2.xlarge
+- Model 2 from model_zoo_v2.py ultimately had the best performance
+..* Used script to perform automated randomized hyperparameter grid search
+..* model2 eventually got a final leaderboard error of 0.1491
 
-For hardware I used a since AWS P2.xlarge instance running Ubuntu 16.04 with a NVIDIA K80 GPU. I created an AWS AMI image for this build for rapid deployment of spot instances, if you're interested please see [this](https://pixelatedbrian.github.io/2018-01-12-AWS-Deep-Learning-with-GPU/) blog post.    
 
 I learned a lot from this project and I'm looking forward to my next challenge.
 
