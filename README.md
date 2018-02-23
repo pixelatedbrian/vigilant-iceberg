@@ -25,8 +25,8 @@ _Additionally because so much of Kaggle contests revolves around impractical ens
 On the final leader board I placed 372nd out of 3,343 teams, or roughly top 11%. This was my first Kaggle competition.
 
 * Used AWS p2.xlarge instance running Ubuntu 16.04 with Nvidia K80 GPU
-..1. Created custom AWS AMI image for faster deployment of spot instances
-..2. [AMI Details Here](https://pixelatedbrian.github.io/2018-01-12-AWS-Deep-Learning-with-GPU/)
+  + Created custom AWS AMI image for faster deployment of spot instances
+  + [AMI Details Here](https://pixelatedbrian.github.io/2018-01-12-AWS-Deep-Learning-with-GPU/)
 * ~10 different convolutional networks evaluated
 * 2 Transfer learning models evaluated, Inception v3 & VGG 17
 ..+ Experimentation found that transfer learning models massively overfit
