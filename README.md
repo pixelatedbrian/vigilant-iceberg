@@ -2,6 +2,10 @@
 ## Contest Overview
 Use data from Kaggle and Statoil to make a classifier that predicts if something is an iceberg or a ship.
 
+<p align="center">
+<img src="/imgs/report/vigilant-iceberg_explanation_graphic_2.png" width="512px"/>
+</p>
+
 **The data provided is:**
 unique identifier, two bands of radar data in log format, satellite incidence angle, is_iceberg label
 
@@ -19,7 +23,11 @@ _Additionally because so much of Kaggle contests revolves around impractical ens
 **Example:** [Beluga 2nd Place Contestant](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294) used a weighted average of ~100 ensembled N.N. models.
 
 ## Results
-![competition results](/imgs/report/log_scores.png)
+
+<p align="center">
+<img src="/imgs/report/log_scores_a.png" width="512px"/>
+</p>
+
 ###### **_Scores above 1.0 were clipped as those scores weren't remotely competitive and skewed the distribution even further. Then Log10 transformation of scores was performed because initial distribution was log normal._**
 
 On the final leader board I placed 372nd out of 3,343 teams, or roughly top 11%. This was my first Kaggle competition.
@@ -48,12 +56,17 @@ On the final leader board I placed 372nd out of 3,343 teams, or roughly top 11%.
 I learned a lot from this project and I'm looking forward to my next challenge.
 
 #### Project Workflow:
-![model flow](/imgs/report/model_flowchart.png)
 
+<p align="center">
+<img src="/imgs/report/model_flowchart_2.png" width="512px"/>
+</p>
 
 #### Data Overview:
 
-![data overview](/imgs/report/vigilant-iceberg_explanation_graphic_2.png)
+<p align="center">
+<img src="/imgs/report/statoil.jpg" width="512px"/>
+</p>
+
 Radar data was gathered by a satellite at an altitude of ~600km. The radar gathered information in 2 bands and also included an incidence angle as well as identifying id and also an is_iceberg label.
 
 The radar data itself consisted of log values in a 2d matrix of shape=(75,75).  This can be thought of as an image but that is somewhat deceptive because the values originally ranged from roughly -30.0 to   +30.0.
