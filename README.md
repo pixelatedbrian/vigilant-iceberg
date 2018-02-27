@@ -85,3 +85,9 @@ This was my first Kaggle competition.
 Radar data was gathered by a satellite at an altitude of ~600km. The radar gathered information in 2 bands and also included an incidence angle as well as identifying id and also an is_iceberg label.
 
 The radar data itself consisted of log values in a 2d matrix of shape=(75,75).  This can be thought of as an image but that is somewhat deceptive because the values originally ranged from roughly -30.0 to   +30.0.
+
+As the above 3d images show even on ideal data the water was very noisy and choppy. Signal processing techniques to attempt to smooth or crop some of the noise increased the evaluation error.  One promising technique was taking the derivative of the contours, looking somewhat like edge detection. But at the time that was evaluated it was used as a 3rd color channel. The resulting error appeared to be even to slightly increased.
+
+I hypothesize that if I had trained a model with the transformation applied to both channels and then used the resulting predictions in conjunction with the standard model's predictions (in ensemble) that the error would improve.  However because of the (artificial) single model constraint this was not attempted during the contest.
+
+Alternatively, the transformed data could be added as 3rd and 4th channels but most likely the model complexity would need to be increased because the type of data and features that the model would need to generalize to would have increased quite a bit. I speculate that this is why having a 3rd channel of transformed data actually increased the evaluation error. (relative to the same architecture without the transformed data)
