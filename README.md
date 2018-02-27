@@ -31,8 +31,11 @@ _Additionally because so much of Kaggle contests revolves around impractical ens
 ###### **_Scores above 1.0 were clipped as those scores weren't remotely competitive and skewed the distribution even further. Then Log10 transformation of scores was performed because initial distribution was log normal._**
 
 **Measured Accuracy:** >95%
+
 **Measured Loss:** 0.1491
+
 **Leaderboard Position:** 372/3,343 (top 11%)
+
 
 This was my first Kaggle competition.
 
