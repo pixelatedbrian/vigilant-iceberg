@@ -20,7 +20,7 @@ unique identifier, two bands of radar data in log format, satellite incidence an
 
 _Additionally because so much of Kaggle contests revolves around impractical ensembles of models an additional self-imposed constraint of using only a single model was followed. (Which may have been too restrictive.)_
 
-**Example:** [Beluga 2nd Place Contestant](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294) used a weighted average of ~100 ensembled N.N. models.
+**Example:** [Beluga 2nd Place Contestant](https://www.kaggle.com/c/statoil-iceberg-classifier-challenge/discussion/48294) used a weighted average of 100 ensembled N.N. models.
 
 ## Results
 
@@ -30,30 +30,45 @@ _Additionally because so much of Kaggle contests revolves around impractical ens
 
 ###### **_Scores above 1.0 were clipped as those scores weren't remotely competitive and skewed the distribution even further. Then Log10 transformation of scores was performed because initial distribution was log normal._**
 
-On the final leader board I placed 372nd out of 3,343 teams, or roughly top 11%. This was my first Kaggle competition.
+**Measured Accuracy:** >95%
+**Measured Loss:** 0.1491
+**Leaderboard Position:** 372/3,343 (top 11%)
 
+This was my first Kaggle competition.
+
+## Project Overview
+
+#### Development Platform
 * Used AWS p2.xlarge instance running Ubuntu 16.04 with Nvidia K80 GPU
   + Created custom AWS AMI image for faster deployment of spot instances
   + [AMI Details Here](https://pixelatedbrian.github.io/2018-01-12-AWS-Deep-Learning-with-GPU/)
   + Used Keras with Tensorflow CUDA/CUDNN GPU acceleration
-* ~10 different convolutional networks evaluated
-* 2 Transfer learning models evaluated, Inception v3 & VGG 17
-  + Experimentation found that transfer learning models massively overfit
-  + Hypothesize that the small 'image' size caused issues here
-  + Also the shapes/textures/features for the image nets really didn't apply to the data provided
-  + Finally as there were 2 channels of radar data a third channel had to be synthesized in order to pretend to be the 3rd color channel for the RGB ConvNets
-* [~6 newly trained architectures evaluated](/src/model_zoo_v2.py)
-  + Final submission only used 2 channels of 'color'
-  + Training from scratch enabled the networks to learn specific features of the radar data
-  + Multiple transformations were attempted as well as blurring and noise cropping. The one with the most potential was a derivative edge detection algorithm.
-  + As the image transformations increased error hypothesize that a few networks trained on transformations individually with their predictions then ensembled would perform better.
-  + Custom models trained tended to take about 15min per run to train on AWS p2.xlarge
-* Model 2 from model_zoo_v2.py ultimately had the best performance
-  + Used script to perform automated randomized hyperparameter grid search
-  + model2 eventually got a final leaderboard error of 0.1491
+* Annaconda Python 3.5
+  + Used notebooks for EDA and prototyping
+  + used python scripts in /src/ to actually run and evaluate models
+  
+#### Ideas Experimented and Evaluated
 
-
-I learned a lot from this project and I'm looking forward to my next challenge.
+| Concept | Resulting Error | Integrated in Final Model |
+|:--------------------------------------------|:---:|:---:|
+|Transfer Learning: Inception V3|<img src="/imgs/report/up.png" width="20px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|Transfer Learning: VGG 17|<img src="/imgs/report/up.png" width="20px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|5 Layer ConvNet|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+|Shallow ConvNet|<img src="/imgs/report/up.png" width="20px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|~10 Layer ConvNet|<img src="/imgs/report/up.png" width="20px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|Standardize Data|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+|Concatenate inc_angle\*|<img src="/imgs/report/even.png" width="25px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|Data Augmentation: Vertical Flip|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+|Data Augmentation: Horizontal Flip|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+|Data Augmentation: Orthagonal Rotation|<img src="/imgs/report/even.png" width="25px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|Randomized Hyperparameter Search|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+|Early Stopping|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+|Signal Processing: Gaussian Smoothing|<img src="/imgs/report/up.png" width="20px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|Signal Processing: Noise Crop|<img src="/imgs/report/up.png" width="20px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|Signal Processing: Derivative|<img src="/imgs/report/even.png" width="25px"/>|<img src="/imgs/report/no.png" width="20px"/>|
+|Drop inc_angle|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+|Drop 3rd 'Color' Channel|<img src="/imgs/report/down.png" width="20px"/>|<img src="/imgs/report/yes.png" width="20px"/>|
+###### \* Initially concatenating inc_angle into the models seemed positive to neutral but later there was a large drop in error when inc_angle was not included in the data pipeline. It may be the flipping/flopping killed the signal that came from inc_angle. Other competitors also seemed to find that not including inc_angle helped with results.
 
 #### Project Workflow:
 
