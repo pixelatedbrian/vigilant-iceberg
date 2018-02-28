@@ -48,7 +48,7 @@ This was my first Kaggle competition.
   + Used Keras with Tensorflow CUDA/CUDNN GPU acceleration
 * Annaconda Python 3.5
   + Used notebooks for EDA and prototyping
-  + used python scripts in /src/ to actually run and evaluate models
+  + used python scripts [here](https://github.com/pixelatedbrian/vigilant-iceberg/tree/master/src) to actually run and evaluate models
   
 #### Ideas Experimented and Evaluated
 
