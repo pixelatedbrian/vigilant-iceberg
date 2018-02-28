@@ -34,7 +34,7 @@ _Additionally because so much of Kaggle contests revolves around impractical ens
 
 **Measured Loss:** 0.1491
 
-**Leaderboard Position:** 372/3,343 (top 11%)
+**Leaderboard Position:** 372/3,652 (top 10%)
 
 
 This was my first Kaggle competition.
@@ -85,11 +85,11 @@ This was my first Kaggle competition.
 <img src="/imgs/report/statoil.jpg" width="512px"/>
 </p>
 
-Radar data was gathered by a satellite at an altitude of ~600km. The radar gathered information in 2 bands and also included an incidence angle as well as identifying id and also an is_iceberg label.
+Radar data was gathered by a satellite at an altitude of ~600km. The radar gathered information in 2 bands, vertical and horizontal, and also included an incidence angle as well as identifying id and also an is_iceberg label.
 
 The radar data itself consisted of log values in a 2d matrix of shape=(75,75).  This can be thought of as an image but that is somewhat deceptive because the values originally ranged from roughly -30.0 to   +30.0.
 
-As the above 3d images show even on ideal data the water was very noisy and choppy. Signal processing techniques to attempt to smooth or crop some of the noise increased the evaluation error.  One promising technique was taking the derivative of the contours, looking somewhat like edge detection. But at the time that was evaluated it was used as a 3rd color channel. The resulting error appeared to be even to slightly increased.
+As the above 3d images show even on ideal data the water was very noisy and choppy. Signal processing techniques to attempt to smooth or crop some of the noise increased the evaluation error.  One promising technique was taking the derivative of the contours, looking somewhat like edge detection. But at the time that was evaluated it was used as a 3rd color channel. The resulting error appeared to be flat to slightly increased.
 
 I hypothesize that if I had trained a model with the transformation applied to both channels and then used the resulting predictions in conjunction with the standard model's predictions (in ensemble) that the error would improve.  However because of the (artificial) single model constraint this was not attempted during the contest.
 
